@@ -1,11 +1,5 @@
-# Use Python 3.7.4 image as the base image
-FROM python:3.7.4
-
-RUN apt-get update && apt-get install -y wget
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.0/protoc-3.19.0-linux-x86_64.zip
-RUN unzip protoc-3.19.0-linux-x86_64.zip -d /usr/local bin/protoc
-RUN unzip protoc-3.19.0-linux-x86_64.zip -d /usr/local 'include/*'
-RUN rm protoc-3.19.0-linux-x86_64.zip
+# Start from a PyTorch base image with CUDA 12.3
+FROM pytorchlightning/pytorch_lightning:latest-py3.7-torch1.8
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
@@ -14,7 +8,7 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 COPY . /usr/src/app
 
-# Install any needed packages specified in requirements.txt
+# Install PyTorch Lightning and any other needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Jupyter
