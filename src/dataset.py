@@ -2,6 +2,24 @@ import torch
 from torch.utils.data import Dataset
 import os
 import pandas as pd
+import numpy as np
+
+
+def build_vocab(data):
+    # Build the vocabulary
+    voc = set()
+    rare_AAs = {"X", "U", "B", "O", "Z"}
+    for sequence in data:
+        voc.update(sequence)
+
+    unique_AAs = sorted(voc - rare_AAs)
+
+    # Build the mapping
+    word2id = {w: i for i, w in enumerate(unique_AAs, start=2)}
+    word2id["<pad>"] = 0
+    word2id["<unk>"] = 1
+
+    return word2id
 
 
 def build_labels(targets):

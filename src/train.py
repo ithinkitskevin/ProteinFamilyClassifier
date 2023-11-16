@@ -1,4 +1,9 @@
-def train_model(model, train_data, val_data, epochs, batch_size):
+import pytorch_lightning as pl
+
+
+def train_model(model, train_data, val_data, epochs, batch_size, gpus=0):
     # Code for training the model
-    model.fit(train_data, epochs=epochs, batch_size=batch_size)
-    # Save model, logging, etc.
+    trainer = pl.Trainer(gpus=gpus, max_epochs=epochs)
+
+    # TODO: Include callbacks for early stopping and checkpointing
+    trainer.fit(model, train_data, val_data)

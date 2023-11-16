@@ -108,3 +108,75 @@ class ProtCNN(pl.LightningModule):
             "optimizer": optimizer,
             "lr_scheduler": lr_scheduler,
         }
+
+
+class ProtTransformer(pl.LightningModule):
+    def __init__(
+        self,
+        num_classes,
+        d_model=120,
+        nhead=8,
+        num_encoder_layers=6,
+        num_decoder_layers=6,
+        dropout=0.1,
+    ):
+        super().__init__()
+        # Ensure d_model matches the feature size
+        self.model = nn.Transformer(
+            d_model=d_model,
+            nhead=nhead,
+            num_encoder_layers=num_encoder_layers,
+            num_decoder_layers=num_decoder_layers,
+            dropout=dropout,
+        )
+        self.fc = nn.Linear(d_model, num_classes)
+
+        self.train_acc = torchmetrics.Accuracy(
+            task="multiclass", num_classes=num_classes
+        )
+        self.valid_acc = torchmetrics.Accuracy(
+            task="multiclass", num_classes=num_classes
+        )
+
+    def forward(self, src):
+        # src shape should be (sequence_length, batch_size, d_model)
+        src = src.float()
+
+        src = src.permute(1, 0, 2)
+        output = self.model(src, src)
+        output = self.fc(output.mean(dim=0))  # Mean pooling
+        return output
+
+    def training_step(self, batch, batch_idx):
+        x, y = batch["sequence"], batch["target"]
+        y_hat = self(x)
+        loss = F.cross_entropy(y_hat, y)
+        self.log("train_loss", loss, on_step=True, on_epoch=True)
+
+        pred = torch.argmax(y_hat, dim=1)
+        self.train_acc(pred, y)
+        self.log("train_acc", self.train_acc, on_step=True, on_epoch=True)
+
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, y = batch["sequence"], batch["target"]
+        y_hat = self(x)
+        pred = torch.argmax(y_hat, dim=1)
+        acc = self.valid_acc(pred, y)
+        self.log("valid_acc", self.valid_acc, on_step=False, on_epoch=True)
+
+        return acc
+
+    def configure_optimizers(self):
+        optimizer = torch.optim.SGD(
+            self.parameters(), lr=1e-2, momentum=0.9, weight_decay=1e-2
+        )
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=[5, 8, 10, 12, 14, 16, 18, 20], gamma=0.9
+        )
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": lr_scheduler,
+        }
