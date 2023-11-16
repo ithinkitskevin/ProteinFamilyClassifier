@@ -1,5 +1,5 @@
-# Use an official Python runtime as a parent image
-FROM python:3.7.4
+# Start from a PyTorch base image with CUDA 12.3
+FROM pytorchlightning/pytorch_lightning:latest-py3.7-torch1.8
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
@@ -14,18 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 EXPOSE 80
 
 # Run app.py when the container launches
-CMD ["python", "./test.py"]
+CMD ["python", "./src/main.py"]
 
 
 
-
-RUN apt-get update && apt-get install -y wget
-RUN wget https://github.com/protocolbuffers/protobuf/releases/download/v3.19.0/protoc-3.19.0-linux-x86_64.zip
-RUN unzip protoc-3.19.0-linux-x86_64.zip -d /usr/local bin/protoc
-RUN unzip protoc-3.19.0-linux-x86_64.zip -d /usr/local 'include/*'
-RUN rm protoc-3.19.0-linux-x86_64.zip
-
-# Start from a PyTorch base image
+# Start from a PyTorch base image with CUDA 12.3
 FROM pytorchlightning/pytorch_lightning:latest-py3.7-torch1.8
 
 # Set the working directory in the container
