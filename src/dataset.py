@@ -48,6 +48,7 @@ class SequenceDataset(torch.utils.data.Dataset):
         self.word2id = word2id
         self.fam2label = fam2label
         self.max_len = max_len
+        
         self.data = data
         self.label = label
 
@@ -56,9 +57,11 @@ class SequenceDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         seq = self.preprocess(self.data.iloc[index])
-        label = self.fam2label.get(self.label.iloc[index], self.fam2label["<unk>"])
-
-        return {"sequence": seq, "target": label}
+        if self.label is not None:
+            label = self.fam2label.get(self.label.iloc[index], self.fam2label["<unk>"])
+            return {"sequence": seq, "target": label}
+        
+        return seq
 
     def preprocess(self, text):
         seq = []
