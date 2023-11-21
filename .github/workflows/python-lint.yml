@@ -17,7 +17,7 @@ jobs:
         pip install flake8 pylint
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Run flake8
-      run: flake8 .
+      run: flake8 --ignore=E501 src/ tests/
     - name: Run pylint in src/
       run: pylint src/
     - name: Run pylint in tests/

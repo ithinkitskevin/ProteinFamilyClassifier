@@ -1,7 +1,7 @@
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import pytorch_lightning as pl
 import torchmetrics
 from torchmetrics.classification import MulticlassF1Score
 
@@ -59,15 +59,27 @@ class ResidualBlock(torch.nn.Module):
 
 
 class ProtBaseModule(pl.LightningModule):
+    """
+    The Base Module for all protein classification models.
+
+    Args:
+        num_classes: The number of classes to predict
+    """
     def __init__(self, num_classes):
         super().__init__()
-        self.train_acc = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
-        self.valid_acc = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
-        self.test_acc = torchmetrics.Accuracy(task="multiclass", num_classes=num_classes)
-        
-        self.train_f1 = MulticlassF1Score(num_classes=num_classes, average='weighted')
-        self.valid_f1 = MulticlassF1Score(num_classes=num_classes, average='weighted')
-        self.test_f1 = MulticlassF1Score(num_classes=num_classes, average='weighted')
+        self.train_acc = torchmetrics.Accuracy(
+            task="multiclass", num_classes=num_classes
+        )
+        self.valid_acc = torchmetrics.Accuracy(
+            task="multiclass", num_classes=num_classes
+        )
+        self.test_acc = torchmetrics.Accuracy(
+            task="multiclass", num_classes=num_classes
+        )
+
+        self.train_f1 = MulticlassF1Score(num_classes=num_classes, average="weighted")
+        self.valid_f1 = MulticlassF1Score(num_classes=num_classes, average="weighted")
+        self.test_f1 = MulticlassF1Score(num_classes=num_classes, average="weighted")
 
     def training_step(self, batch, batch_idx):
         x, y = batch["sequence"], batch["target"]
@@ -78,10 +90,10 @@ class ProtBaseModule(pl.LightningModule):
         pred = torch.argmax(y_hat, dim=1)
         self.train_acc(pred, y)
         self.log("train_acc", self.train_acc, on_step=True, on_epoch=True)
-        
+
         f1_score = self.train_f1(pred, y)
-        self.log('train_f1', f1_score, on_step=True, on_epoch=True)
-        
+        self.log("train_f1", f1_score, on_step=True, on_epoch=True)
+
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -89,29 +101,28 @@ class ProtBaseModule(pl.LightningModule):
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
         self.log("val_loss", loss, on_step=False, on_epoch=True)
-        
+
         pred = torch.argmax(y_hat, dim=1)
         acc = self.valid_acc(pred, y)
         self.log("val_acc", self.valid_acc, on_step=False, on_epoch=True)
-        
+
         f1_score = self.valid_f1(pred, y)
-        self.log('val_f1', f1_score, on_step=False, on_epoch=True)
-        
-        return {'val_loss': loss, 'val_acc': acc, 'val_f1': f1_score}
-    
+        self.log("val_f1", f1_score, on_step=False, on_epoch=True)
+
+        return {"val_loss": loss, "val_acc": acc, "val_f1": f1_score}
+
     def test_step(self, batch, batch_idx):
-        x, y = batch['sequence'], batch['target']
+        x, y = batch["sequence"], batch["target"]
         y_hat = self(x)
         loss = F.cross_entropy(y_hat, y)
-        
+
         pred = torch.argmax(y_hat, dim=1)
         acc = self.test_acc(pred, y)
-        self.log('test_acc', acc, on_step=False, on_epoch=True)
+        self.log("test_acc", acc, on_step=False, on_epoch=True)
         f1_score = self.test_f1(pred, y)
-        self.log('test_f1', f1_score, on_step=False, on_epoch=True)
-        
-        return {'test_loss': loss, 'test_acc': acc, 'test_f1': f1_score}
+        self.log("test_f1", f1_score, on_step=False, on_epoch=True)
 
+        return {"test_loss": loss, "test_acc": acc, "test_f1": f1_score}
 
     def configure_optimizers(self):
         optimizer = torch.optim.SGD(
@@ -122,7 +133,14 @@ class ProtBaseModule(pl.LightningModule):
         )
         return {"optimizer": optimizer, "lr_scheduler": lr_scheduler}
 
+
 class ProtCNN(ProtBaseModule):
+    """
+    ProtCNN (https://www.biorxiv.org/content/10.1101/626507v3.full).
+
+    Args:
+        num_classes: The number of classes to predict
+    """
     def __init__(self, num_classes):
         super().__init__(num_classes)
         self.model = torch.nn.Sequential(
@@ -136,25 +154,3 @@ class ProtCNN(ProtBaseModule):
 
     def forward(self, x):
         return self.model(x.float())
-
-
-class ProteinTransformer(ProtBaseModule):
-    def __init__(
-        self, num_classes, d_model=120, nhead=8, num_encoder_layers=6, num_decoder_layers=6, dropout=0.1,
-    ):
-        super().__init__(num_classes)
-        self.model = nn.Transformer(
-            d_model=d_model, 
-            nhead=nhead, 
-            num_encoder_layers=num_encoder_layers, 
-            num_decoder_layers=num_decoder_layers, 
-            dropout=dropout,
-        )
-        self.fc = nn.Linear(d_model, num_classes)
-
-    def forward(self, src):
-        src = src.float()
-        src = src.permute(1, 0, 2)
-        output = self.model(src, src)
-        output = self.fc(output.mean(dim=0))
-        return output
