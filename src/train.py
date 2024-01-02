@@ -32,7 +32,7 @@ def save_model_checkpoint(trainer, args):
     checkpoint_filename = f"{args.model_type}_{timestamp}.ckpt"
 
     # Combine the directory and filename
-    checkpoint_path = os.path.join("models", checkpoint_filename)
+    checkpoint_path = os.path.join("/models", checkpoint_filename)
 
     # Save the model checkpoint
     trainer.save_checkpoint(checkpoint_path)

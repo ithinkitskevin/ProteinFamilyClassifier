@@ -1,4 +1,4 @@
-# Start from a PyTorch base image with CUDA 12.3
+# Start from a PyTorch base image with CUDA 11.8
 FROM pytorchlightning/pytorch_lightning:latest-py3.10-torch2.0-cuda11.8.0
 
 # Set the working directory in the container

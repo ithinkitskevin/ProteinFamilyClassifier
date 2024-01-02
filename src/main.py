@@ -214,7 +214,7 @@ def predict(args):
     # Write the updated lines to a new file
     with open(args.predict_dir + "_prediction", "w") as file:
         file.writelines(updated_lines)
-
+    print(args.predict_dir + "_prediction")
     print("Finished writing predictions to file")
 
 

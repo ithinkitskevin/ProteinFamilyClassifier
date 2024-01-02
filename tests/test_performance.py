@@ -17,7 +17,7 @@ class TestModelPerformance(unittest.TestCase):
         Set up the test environment before each test method.
         """
         # Assuming num_classes is known, and a mock DataLoader is available
-        self.num_classes = 10  # Example number of classes
+        self.num_classes = 17320  # Example number of classes
         self.mock_dataloader = create_mock_dataloader()
         self.model = create_model()
 
